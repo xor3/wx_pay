@@ -22,7 +22,7 @@ module WxPay
 
       r
     end
-    
+
     INVOKE_CLOSEORDER_REQUIRED_FIELDS = [:out_trade_no]
     def self.invoke_closeorder(params, options = {})
       params = {
@@ -30,7 +30,7 @@ module WxPay
         mch_id: options.delete(:mch_id) || WxPay.mch_id,
         key: options.delete(:key) || WxPay.key,
         nonce_str: SecureRandom.uuid.tr('-', '')
-      }.merge(params)  
+      }.merge(params)
 
       check_required_options(params, INVOKE_CLOSEORDER_REQUIRED_FIELDS)
 
@@ -239,7 +239,7 @@ module WxPay
 
       r
     end
-    
+
     def self.sendredpack(params, options={})
       params = {
         wxappid: options.delete(:appid) || WxPay.appid,
@@ -281,14 +281,26 @@ module WxPay
       def invoke_remote(url, payload, options = {})
         options = WxPay.extra_rest_client_options.merge(options)
 
-        r = RestClient::Request.execute(
-          {
-            method: :post,
-            url: url,
-            payload: payload,
-            headers: { content_type: 'application/xml' }
-          }.merge(options)
-        )
+        uri = URI.parse(url)
+        http = Net::HTTP.new(uri.host, uri.port)
+        request = Net::HTTP::Post.new(uri.request_uri)
+        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+        http.use_ssl = true if uri.scheme == "https"  # enable SSL/TLS
+        # http.set_debug_output $stderr
+        request.body = payload
+        request["Content-Type"] = "application/xml"
+        # request["Accept"] = "application/xml"
+
+        response = http.request(request)
+        r = response.body
+        # r = RestClient::Request.execute(
+        #   {
+        #     method: :post,
+        #     url: url,
+        #     payload: payload,
+        #     headers: { content_type: 'application/xml' }
+        #   }.merge(options)
+        # )
 
         WxPay::Result.new(Hash.from_xml(r))
       end
