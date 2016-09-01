@@ -1,4 +1,4 @@
-require 'rest_client'
+# require 'rest_client'
 require 'active_support/core_ext/hash/conversions'
 
 module WxPay
